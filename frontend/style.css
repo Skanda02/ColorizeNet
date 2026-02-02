@@ -1,0 +1,12 @@
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #111;
+  color: white;
+}
+
+img {
+  margin-top: 20px;
+  width: 256px;
+  border-radius: 10px;
+}
