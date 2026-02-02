@@ -1,0 +1,170 @@
+LAB Space–Based Image Colorization Using U-Net and Conditional GANs
+
+Abstract
+
+Image colorization is a fundamentally ill-posed problem in computer vision, as multiple plausible color mappings may exist for a single grayscale image. Traditional regression-based approaches often produce desaturated or unrealistic color outputs due to reliance on pixel-wise loss functions. In this work, we present a two-stage image colorization pipeline that operates in the CIE LAB color space. We first establish a deterministic baseline using a U-Net architecture trained to predict chrominance components from luminance input. We then extend this framework using a conditional Generative Adversarial Network (cGAN), inspired by the Pix2Pix paradigm, to enhance perceptual realism and color diversity. The proposed system leverages adversarial, reconstruction, and perceptual losses to balance fidelity and realism. Experimental results demonstrate significant improvements in color vibrancy and perceptual quality, evaluated using ΔE color difference and structural similarity metrics. The final model is lightweight, modular, and suitable for real-world deployment.
+
+1. Introduction
+
+Colorization of grayscale images is a long-standing problem in computer vision with applications in image restoration, historical photo enhancement, medical imaging, and creative media. The challenge arises from the inherent ambiguity of color assignment: a single grayscale pixel may correspond to multiple valid color values.
+
+Early colorization techniques relied on manual scribbles or example-based matching. With the advent of deep learning, convolutional neural networks have enabled fully automatic colorization by learning statistical color distributions from large datasets. However, models trained solely using pixel-wise losses such as Mean Squared Error (MSE) often converge to average color predictions, resulting in dull or sepia-toned outputs.
+
+To address this limitation, we propose a hybrid approach that combines:
+
+A deterministic regression-based model for structural correctness.
+
+A conditional GAN framework to improve perceptual realism and color diversity.
+
+Our system operates in the LAB color space, which decouples luminance from chrominance and aligns better with human visual perception.
+
+2. Related Work
+
+Early automatic colorization methods utilized hand-crafted features and nearest-neighbor matching. With deep learning, Zhang et al. (2016) demonstrated the effectiveness of LAB-space color prediction using classification-based losses. Isola et al. (2017) introduced Pix2Pix, a conditional GAN framework for paired image-to-image translation tasks, showing that adversarial training significantly improves perceptual quality.
+
+Subsequent works incorporated perceptual losses using pretrained networks (e.g., VGG) to further enhance realism. Our work builds upon these ideas but emphasizes pipeline correctness, stability, and deployability, making it suitable for both academic and practical applications.
+
+3. Methodology
+3.1 Color Space Representation
+
+We use the CIE LAB color space, where:
+
+L represents luminance (lightness),
+
+A and B represent chrominance components.
+
+This separation allows the model to focus on predicting color independently of image structure.
+
+3.2 Dataset and Preprocessing
+
+Images are loaded using TensorFlow Datasets (TFDS). Each RGB image is:
+
+Resized to a fixed resolution.
+
+Converted from RGB to LAB color space.
+
+Split into:
+
+Input: L channel (normalized to [0, 1]),
+
+Target: AB channels (normalized to [−1, 1]).
+
+Data augmentation (horizontal flipping and brightness jitter) is applied to improve generalization.
+
+3.3 Baseline Model: U-Net
+
+We employ a U-Net architecture as the baseline generator. The encoder captures hierarchical spatial features, while skip connections preserve fine-grained details during decoding. The network predicts the AB channels conditioned on the L channel.
+
+The baseline model is trained using Mean Squared Error (MSE) loss and serves as a strong deterministic reference.
+
+3.4 Conditional GAN Architecture
+
+To improve perceptual quality, we extend the baseline model using a conditional GAN framework.
+
+Generator
+
+U-Net architecture
+
+Input: L channel
+
+Output: AB channels
+
+Discriminator
+
+PatchGAN discriminator
+
+Inputs: concatenated (L, AB) pairs
+
+Output: real/fake predictions at the patch level
+
+This design encourages local color realism while preserving global structure.
+
+3.5 Loss Functions
+
+The generator is trained using a weighted combination of:
+
+Adversarial loss (Binary Cross-Entropy),
+
+L1 reconstruction loss for color fidelity,
+
+Perceptual loss computed using a pretrained VGG network.
+
+
+The discriminator is trained using standard adversarial loss with label smoothing to improve stability.
+
+3.6 Training Strategy
+
+Training follows an alternating optimization scheme:
+
+Update discriminator parameters.
+
+Freeze discriminator weights.
+
+Update generator parameters.
+
+Early stopping and validation-based monitoring are employed to prevent overfitting. The discriminator is discarded during inference.
+
+4. Evaluation
+4.1 Quantitative Metrics
+
+We evaluate model performance using:
+
+ΔE (CIE76): Measures perceptual color difference.
+
+SSIM: Measures structural similarity between predicted and ground-truth images.
+
+The GAN-based model consistently outperforms the baseline U-Net in ΔE scores, indicating improved color accuracy.
+
+4.2 Qualitative Results
+
+Qualitative evaluation shows:
+
+Reduced desaturation artifacts,
+
+Improved color diversity,
+
+Better alignment with natural color distributions.
+
+GAN-based outputs exhibit sharper boundaries and more realistic textures compared to regression-only models.
+
+5. Deployment Pipeline
+
+For production use:
+
+The trained generator is exported.
+
+Input images are converted to LAB.
+
+The L channel is passed through the generator.
+
+Predicted AB channels are recombined and converted back to RGB.
+
+The model can be deployed using TensorFlow Serving or converted to TensorFlow Lite for edge devices.
+
+6. Discussion
+
+While GANs improve perceptual realism, they introduce training complexity and instability. Our approach mitigates these challenges using reconstruction losses, label smoothing, and PatchGAN discriminators. The modular design allows the GAN component to be disabled when deterministic outputs are preferred.
+
+7. Conclusion
+
+We presented a complete, end-to-end image colorization pipeline based on LAB color space decomposition, U-Net regression, and conditional GAN refinement. The proposed system achieves a balance between structural accuracy and perceptual realism, is robust to training instabilities, and is suitable for real-world deployment. Future work includes temporal consistency for video colorization and semantic-aware color priors.
+
+8. Future Work
+
+Video colorization with temporal coherence
+
+Transformer-based generators
+
+Semantic segmentation–guided colorization
+
+Lightweight mobile deployment
+
+User-guided color hints
+
+References
+
+Zhang et al., Colorful Image Colorization, ECCV 2016
+
+Isola et al., Image-to-Image Translation with Conditional GANs, CVPR 2017
+
+Goodfellow et al., Generative Adversarial Networks, NeurIPS 2014
